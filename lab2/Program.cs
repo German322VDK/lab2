@@ -166,7 +166,6 @@ namespace lab2
                 file2.WriteLine(t + " " + M + " " + Mer);
                 file3.WriteLine(t + " " + C);
 
-                
                 using (sw[ch] = new StreamWriter("s-" + sv[ch] + ".txt"))
                 {
                     for (int i = 0; i < N; i++)
