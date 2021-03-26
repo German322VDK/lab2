@@ -133,7 +133,6 @@ namespace lab2
                     MS += Ms[i];
                 }
 
-               
                 En = ES /= 5;
                 ESQ /= 5;
                 M = MS /= 5;
