@@ -47,13 +47,14 @@ namespace lab2
             using StreamWriter file1 = new StreamWriter(filename1);
             using StreamWriter file2 = new StreamWriter(filename2);
             using StreamWriter file3 = new StreamWriter(filename3);
-            
+            StreamWriter[] sw = new StreamWriter[100];
+
             int ir=0, jr=0;
             double E1, E2, d, rn, C, rd, Eer = 0, Mer = 0, ES = 0, ESQ =0, MS=0;
             double[] E = new double[5];
             double[] Esq = new double[5];
             double[] Ms = new double[5];
-
+            int ch = 0;
             Random r = new Random();
 
             for (int i = 0; i < N; i++)
@@ -65,19 +66,22 @@ namespace lab2
                 }
             }
 
+            string[] sv = new string[100];
+
+            for (int k = 0; k < 100; k++)
+            {
+                sv[k] = Convert.ToString(k, 2);
+                int l = sv[k].Length;
+                while (l < 7)
+                {
+                    sv[k] = "0" + sv[k];
+                    l++;
+                }
+            }
+
             Console.WriteLine("Начинаем:");
 
-            //for (int i = 0; i < N; i++)
-            //{
-            //    for (int j = 0; j < N; j++)
-            //    {
-            //        Console.Write(fourS[i, j].a + " ");
-            //    }
-            //    Console.WriteLine();
-            //}
-
-            
-            for (double t = 0.05; t < 4; t += 0.05)
+            for (double t = 0.05; t <= 4; t += 0.05)
             {
                 t = Math.Round(t, 2);
                 var timer = Stopwatch.StartNew();
@@ -156,11 +160,27 @@ namespace lab2
                 Mer = Math.Round(Mer, 4);
 
                 Console.WriteLine("T= " + t + " En= " + En + " M= " + M + " C= " + C + " Eer= " +
-                 Eer + " Mer= " + Mer + " таймер " + timer.Elapsed.Seconds);
+                 Eer + " Mer= " + Mer);
 
                 file1.WriteLine(t + " " + En + " " + Eer);
                 file2.WriteLine(t + " " + M + " " + Mer);
                 file3.WriteLine(t + " " + C);
+
+                
+                using (sw[ch] = new StreamWriter("s-" + sv[ch] + ".txt"))
+                {
+                    for (int i = 0; i < N; i++)
+                    {
+                        for (int j = 0; j < N; j++)
+                        {
+                            sw[ch].WriteLine(i + "\t" + j + "\t" + 0 + "\t" + Math.Cos(fourS[i, j].a)
+                                + "\t" + Math.Sin(fourS[i, j].a) + "\t" + 0);
+
+                        }
+                    }
+                }
+                Console.WriteLine("Таймер " + timer.Elapsed.Seconds);
+                ch++;
             }
             
             Console.WriteLine("Всё:)");
@@ -318,7 +338,7 @@ namespace lab2
         static void Main(string[] args)
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            int n = 16;
+            int n = 32;
             string fn1 = "1.txt";
             string fn2 = "2.txt";
             string fn3 = "3.txt";
