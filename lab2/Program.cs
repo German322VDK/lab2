@@ -1,112 +1,87 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace lab2
 {
-    public class SpinSystem // система спинов
+    class Program
     {
-        private readonly SpinItem[,] fourS; // массив объектов
+        static double[,] a; // массив спинов
+        static int N = 32; // количество спиннов NxN
 
-        public int N { get; private set; } // длина массива
-
-        public double En { get; private set; } // энергия системы
-
-        public double M { get; private set; } // намагниченность системы
-
-        public string filename1 { get; private set; } // имя файла1
-
-        public string filename2 { get; private set; } // имя файла2
-
-        public string filename3 { get; private set; } // имя файла2
-
-        public SpinSystem(int _n, string _filename1, string _filename2, string _filename3) // конструктор
+        static void Main(string[] args)
         {
-            N = _n;
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+            double En, M; // Энергия системы и намагниченность
+            string fn1 = "1.txt", fn2 = "2.txt", fn3 = "3.txt"; // имена файлов
+            StreamWriter[] sw = new StreamWriter[80]; // массив потоков файлов
+            a = new double[N, N]; // создание массива спинов
+            int ir, jr; // индексы рандомного спина
+            double E1, E2, d, rn, C, rd, spold, Eer = 0, Mer = 0, ES = 0, ESQ = 0, MS = 0; // переменные для подсчёта энергии намагниченности теплоёмкости и тд
+            double[] E = new double[5]; // массив энергий системы
+            double[] Esq = new double[5]; // массив квадратов энергий системы
+            double[] Ms = new double[5]; // массив намагниченностей системы
+            int ch = 0; // номер текущего файла
+            Random r = new Random(); // объект рандома
+            string[] sv = new string[80]; // массив 2ых названий 
 
-            filename1 = _filename1;
-
-            filename2 = _filename2;
-
-            filename3 = _filename3;
-
-            fourS = new SpinItem[N, N];
-
-            for (int i = 0; i < N; i++)
+            double[] EnAr = new double[80];
+            double[] MAr = new double[80];
+            double[] CAr = new double[80];
+            double[] EerAr = new double[80];
+            double[] MerAr = new double[80];
+            for (int i = 0; i < N; i++) // рандомим систему спинов
             {
                 for (int j = 0; j < N; j++)
                 {
-                    fourS[i, j] = new SpinItem();
+                    a[i, j] = NextDouble(-1 * Math.PI, Math.PI);
                 }
             }
-        }
 
-        public void Creat() // создаём массив объектов, рандомим спин, считаем соседей, 
-                                 //энергию спинов и системы, намагниченность
-        {
-            using StreamWriter file1 = new StreamWriter(filename1);
-            using StreamWriter file2 = new StreamWriter(filename2);
-            using StreamWriter file3 = new StreamWriter(filename3);
-            var timer = Stopwatch.StartNew();
-            int ir=0, jr=0;
-            double E1, E2, d, rn, C, Eer = 0, Mer = 0, ES = 0, ESQ =0, MS=0;
-            double[] E = new double[5];
-            double[] Esq = new double[5];
-            double[] Ms = new double[5];
-
-            Random r = new Random();
-
-            for (int i = 0; i < N; i++)
+            for (int k = 0; k < 80; k++) // считем названия
             {
-                for (int j = 0; j < N; j++)
+                sv[k] = Convert.ToString(k, 2);
+                int l = sv[k].Length;
+                while (l < 7)
                 {
-                    if (r.Next(2) == 1) fourS[i, j].a = 1;
-                    else fourS[i, j].a = -1;
+                    sv[k] = "0" + sv[k];
+                    l++;
                 }
             }
-
+           
             Console.WriteLine("Начинаем:");
-
-            for (double t = 0.05; t < 4; t += 0.05)
+            
+            for (double t = 0.05; t <= 4; t += 0.05) // цикл по температуре
             {
-                t = Math.Round(t, 2);
-
+                t = Math.Round(t, 2); // округляем (ps иногда бывало 0.1000000000000003)
+                // обнуляем
                 ES = 0;
                 ESQ = 0;
                 MS = 0;
                 Eer = 0;
                 Mer = 0;
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 5; i++) // 5 раз вызываем монтекарло и считаем среднее
                 {
-                    for (int mk = 0; mk < 100000; mk++)
+                    for (int mk = 0; mk < 500000; mk++) // монтекарло
                     {
-                        CreatSpinArraySys();
-
                         ir = r.Next(N);
                         jr = r.Next(N);
+                        rd = NextDouble(-1 * Math.PI, Math.PI);
 
+                        spold = a[ir, jr];
                         E1 = CreatEnS(ir, jr);
-
-                        fourS[ir, jr].a *= -1;
-
+                        a[ir, jr] = rd;
                         E2 = CreatEnS(ir, jr);
 
-                        if (E1 > E2) fourS[ir, jr].ens = E2;
-
-                        else
+                        if (E1 <= E2) 
                         {
                             rn = r.NextDouble();
 
                             d = Math.Exp(-1 * (E2 - E1) / t);
 
-                            if (rn > d)
-                                fourS[ir, jr].a *= -1;
+                            if (rn > d) a[ir, jr] = spold;
                         }
-
                     }
-
-                    CreatEnSys();
 
                     E[i] = EnSys();
 
@@ -115,21 +90,21 @@ namespace lab2
                     Ms[i] = Magnet();
                 }
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 5; i++) // считаем среднее
                 {
                     ES += E[i];
                     ESQ += Esq[i];
                     MS += Ms[i];
                 }
 
-               
+
                 En = ES /= 5;
                 ESQ /= 5;
                 M = MS /= 5;
 
-                C = (ESQ - ES * ES) / (t * t);
+                C = (ESQ - ES * ES) / (t * t); // теплоёмкость
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 5; i++) // считаем ошибки
                 {
                     Eer += (E[i] - ES) * (E[i] - ES);
                     Mer += (Ms[i] - MS) * (Ms[i] - MS);
@@ -138,175 +113,139 @@ namespace lab2
                 Eer = Math.Sqrt(Eer / 4);
                 Mer = Math.Sqrt(Mer / 4);
 
-                En = Math.Round(En, 4);
-                M = Math.Round(M, 4);
-                C = Math.Round(C, 4);
-                Eer = Math.Round(Eer, 4);
-                Mer = Math.Round(Mer, 4);
+                EnAr[ch] = En;
+                MAr[ch] = M;
+                CAr[ch] = C;
+                EerAr[ch] = Eer;
+                MerAr[ch] = Mer;
 
-                Console.WriteLine("T= " + t + " En= " + En + " M= " + M + " C= " + C + " Eer= " +
-                 Eer + " Mer= " + Mer + " таймер " + timer.Elapsed.Seconds);
+                Console.WriteLine("T= " + t + " En= " + En + " M= " + M + " C= " + C + " Eer= " + Eer + " Mer= " + Mer);
+                
+                using (sw[ch] = new StreamWriter("s-" + sv[ch] + ".txt")) // безопасно открываем поток записываем в файл и его закрываем
+                {
+                    for (int i = 0; i < N; i++)
+                    {
+                        for (int j = 0; j < N; j++)
+                        {
+                            sw[ch].WriteLine(i + "\t" + j + "\t" + 0 + "\t" + Math.Cos(a[i, j])
+                                + "\t" + Math.Sin(a[i, j]) + "\t" + 0);
+                        }
+                    }
+                }
+                ch++;
+            }
 
-                file1.WriteLine(t + " " + En + " " + Eer);
-                file2.WriteLine(t + " " + M + " " + Mer);
-                file3.WriteLine(t + " " + C);
+            double T; // записываем в 3 файла для гнуплот (вынес из цикла Т ради скорости)
+            using (StreamWriter file1 = new StreamWriter(fn1))
+            {
+                T = 0.05;
+                for (int i = 0; i < 80; i++)
+                {
+                    T = Math.Round(T, 2);
+                    file1.WriteLine(T + " " + EnAr[i] + " " + EerAr[i]);
+                    T += 0.05;
+                }
+            }
+            using (StreamWriter file2 = new StreamWriter(fn2))
+            {
+                T = 0.05;
+                for (int i = 0; i < 80; i++)
+                {
+                    T = Math.Round(T, 2);
+                    file2.WriteLine(T + " " + MAr[i] + " " + MerAr[i]);
+                    T += 0.05;
+                }
+            }
+            using (StreamWriter file3 = new StreamWriter(fn3))
+            {
+                T = 0.05;
+                for (int i = 0; i < 80; i++)
+                {
+                    T = Math.Round(T, 2);
+                    file3.WriteLine(T + " " + CAr[i]);
+                    T += 0.05;
+                }
             }
 
             Console.WriteLine("Всё:)");
+
+            Console.ReadKey();
         }
 
-        public void CreatSpinArray(int i, int j) // считаем соседей
+        public static double[] CreatSpinArray(int i, int j) // считаем соседей
         {
-            int[] a = new int[4];
+            double[] s = new double[4];
 
             //Вверх
-            if (i > 0) a[0] = fourS[i - 1, j].a;
-            else a[0] = fourS[N - 1, j].a;
+            if (i > 0) s[0] = a[i - 1, j];
+            else s[0] = a[N - 1, j];
             //Право
-            if (j < N - 1) a[1] = fourS[i, j + 1].a;
-            else a[1] = fourS[i, 0].a;
+            if (j < N - 1) s[1] = a[i, j + 1];
+            else s[1] = a[i, 0];
             //Низ
-            if (i < N - 1) a[2] = fourS[i + 1, j].a;
-            else a[2] = fourS[0, j].a;
+            if (i < N - 1) s[2] = a[i + 1, j];
+            else s[2] = a[0, j];
             //Лево
-            if (j > 0) a[3] = fourS[i, j - 1].a;
-            else a[3] = fourS[i, N - 1].a;
+            if (j > 0) s[3] = a[i, j - 1];
+            else s[3] = a[i, N - 1];
 
-            fourS[i, j].f = a;
+            return s;
         }
 
-        public void CreatSpinArraySys()
-        {
-            for (int i = 0; i < N; i++)
-            {
-                for (int j = 0; j < N; j++)
-                {
-                    CreatSpinArray(i, j);
-                }
-            }
-        }
-
-        public double CreatEnS(int ien, int jen) // считаем энергию спина
+        public static double CreatEnS(int ien, int jen) // считаем энергию спина
         {
             double en = 0;
-
-            for(int i = 0; i < 4; i++)
+            double[] s = CreatSpinArray(ien, jen);
+            for (int i = 0; i < 4; i++)
             {
-                en += fourS[ien, jen].f[i] * fourS[ien, jen].a;
+                en += Math.Cos(a[ien, jen] - s[i]);
             }
-
-            fourS[ien, jen].ens = en * (-1);
 
             return en * (-1);
         }
 
-        public void CreatEnSys()
+        public static double EnSys() // Энергия системы
         {
+            double en = 0;
+
             for (int i = 0; i < N; i++)
             {
                 for (int j = 0; j < N; j++)
                 {
-                    CreatEnS(i, j);
+                    en += CreatEnS(i, j);
                 }
             }
+
+            return en / (N * N);
         }
 
-        public double EnSys() // Энергия системы
+        public static double Magnet() //Намагниченность системы
         {
-            double en=0;
+            double m, ms = 0, mc = 0;
 
             for (int i = 0; i < N; i++)
             {
                 for (int j = 0; j < N; j++)
                 {
-                    en += fourS[i, j].ens;
+                    ms += Math.Sin(a[i, j]);
+                    mc += Math.Cos(a[i, j]);
                 }
             }
 
-            return en / (N*N);
-        }
+            m = ms * ms + mc * mc;
 
-        public double Magnet() //Намагниченность системы
-        {
-            double m = 0;
+            m /= (N * N * N * N);
 
-            for (int i = 0; i < N; i++)
-            {
-                for (int j = 0; j < N; j++)
-                {
-                    m += fourS[i, j].a;
-                }
-            }
-
-           m /= (N*N);
-
-           m = Math.Abs(m);
             return m;
         }
 
-        public void Print() // Вывод на экран всей информации об системе
+        public static double NextDouble(double a, double b) // считаем случайное дробное число в промежутке от до
         {
-            for (int i = 0; i < N; i++)
-            {
-                for (int j = 0; j < N; j++)
-                {
-                    Console.Write(fourS[i, j].a + "    ");
-                }
-                Console.WriteLine();
-            }
+            Random random = new Random();
 
-            //Console.WriteLine();
-            //Console.WriteLine($"Намагниченность системы равна {M}; полная энергия равна {En}");
-            //Console.WriteLine();
+            double x = random.NextDouble();
 
-            //for (int i = 0; i < N; i++)
-            //{
-            //    for (int j = 0; j < N; j++)
-            //    {
-            //        Console.WriteLine("число [" + i + "][" + j + "] " + fourS[i, j].a + "; энергия спина " + fourS[i, j].ens);
-
-            //        Console.WriteLine("Cпины: вверх право низ лево");
-
-            //        for (int k = 0; k < 4; k++)
-            //        {
-            //            Console.Write(fourS[i, j].f[k] + " ");
-            //        }
-            //        Console.WriteLine();
-            //        Console.WriteLine();
-            //    }
-            //    Console.WriteLine();
-            //}
-
-        }
-    
-    }
-
-
-    public class SpinItem // объект спин
-    {
-        public int a { get; set; } // Спин
-
-        public int[] f { get; set; } = new int[4]; //4 соседа верх право низ лево
-
-        public double ens { get; set; } // энергия спина
-    }
-
-
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            int n = 16;
-            string fn1 = "1.txt";
-            string fn2 = "2.txt";
-            string fn3 = "3.txt";
-
-            SpinSystem system = new SpinSystem(n, fn1, fn2, fn3);
-
-            system.Creat();
-
-            Console.ReadKey();
-        }
+            return x * a + (1 - x) * b;
+        } 
     }
 }
