@@ -6,16 +6,13 @@ namespace lab2
     class Program
     {
         static double[,] a; // массив спинов
-        static int N = 64; // количество спиннов NxN
+        static int N = 32; // количество спиннов NxN
 
         static void Main(string[] args)
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
             double En, M; // Энергия системы и намагниченность
             string fn1 = "1.txt", fn2 = "2.txt", fn3 = "3.txt"; // имена файлов
-            using StreamWriter file1 = new StreamWriter(fn1); // поток файла 1.txt
-            using StreamWriter file2 = new StreamWriter(fn2); // поток файла 2.txt
-            using StreamWriter file3 = new StreamWriter(fn3); // поток файла 3.txt
             StreamWriter[] sw = new StreamWriter[80]; // массив потоков файлов
             a = new double[N, N]; // создание массива спинов
             int ir, jr; // индексы рандомного спина
@@ -27,6 +24,11 @@ namespace lab2
             Random r = new Random(); // объект рандома
             string[] sv = new string[80]; // массив 2ых названий 
 
+            double[] EnAr = new double[80];
+            double[] MAr = new double[80];
+            double[] CAr = new double[80];
+            double[] EerAr = new double[80];
+            double[] MerAr = new double[80];
             for (int i = 0; i < N; i++) // рандомим систему спинов
             {
                 for (int j = 0; j < N; j++)
@@ -45,9 +47,9 @@ namespace lab2
                     l++;
                 }
             }
-
+           
             Console.WriteLine("Начинаем:");
-
+            
             for (double t = 0.05; t <= 4; t += 0.05) // цикл по температуре
             {
                 t = Math.Round(t, 2); // округляем (ps иногда бывало 0.1000000000000003)
@@ -60,7 +62,7 @@ namespace lab2
 
                 for (int i = 0; i < 5; i++) // 5 раз вызываем монтекарло и считаем среднее
                 {
-                    for (int mk = 0; mk < 1000000; mk++) // монтекарло
+                    for (int mk = 0; mk < 500000; mk++) // монтекарло
                     {
                         ir = r.Next(N);
                         jr = r.Next(N);
@@ -111,12 +113,14 @@ namespace lab2
                 Eer = Math.Sqrt(Eer / 4);
                 Mer = Math.Sqrt(Mer / 4);
 
+                EnAr[ch] = En;
+                MAr[ch] = M;
+                CAr[ch] = C;
+                EerAr[ch] = Eer;
+                MerAr[ch] = Mer;
+
                 Console.WriteLine("T= " + t + " En= " + En + " M= " + M + " C= " + C + " Eer= " + Eer + " Mer= " + Mer);
-
-                file1.WriteLine(t + " " + En + " " + Eer);
-                file2.WriteLine(t + " " + M + " " + Mer);
-                file3.WriteLine(t + " " + C);
-
+                
                 using (sw[ch] = new StreamWriter("s-" + sv[ch] + ".txt")) // безопасно открываем поток записываем в файл и его закрываем
                 {
                     for (int i = 0; i < N; i++)
@@ -129,6 +133,38 @@ namespace lab2
                     }
                 }
                 ch++;
+            }
+
+            double T; // записываем в 3 файла для гнуплот (вынес из цикла Т ради скорости)
+            using (StreamWriter file1 = new StreamWriter(fn1))
+            {
+                T = 0.05;
+                for (int i = 0; i < 80; i++)
+                {
+                    T = Math.Round(T, 2);
+                    file1.WriteLine(T + " " + EnAr[i] + " " + EerAr[i]);
+                    T += 0.05;
+                }
+            }
+            using (StreamWriter file2 = new StreamWriter(fn2))
+            {
+                T = 0.05;
+                for (int i = 0; i < 80; i++)
+                {
+                    T = Math.Round(T, 2);
+                    file2.WriteLine(T + " " + MAr[i] + " " + MerAr[i]);
+                    T += 0.05;
+                }
+            }
+            using (StreamWriter file3 = new StreamWriter(fn3))
+            {
+                T = 0.05;
+                for (int i = 0; i < 80; i++)
+                {
+                    T = Math.Round(T, 2);
+                    file3.WriteLine(T + " " + CAr[i]);
+                    T += 0.05;
+                }
             }
 
             Console.WriteLine("Всё:)");
