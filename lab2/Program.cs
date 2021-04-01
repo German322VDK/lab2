@@ -178,7 +178,7 @@ namespace lab2
                         }
                     }
                 }
-                Console.WriteLine("Таймер " + timer.Elapsed.Seconds);
+                Console.WriteLine("Таймер " + timer.Elapsed.Milliseconds);
                 ch++;
             }
             
@@ -337,7 +337,7 @@ namespace lab2
         static void Main(string[] args)
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            int n = 32;
+            int n = 16;
             string fn1 = "1.txt";
             string fn2 = "2.txt";
             string fn3 = "3.txt";
