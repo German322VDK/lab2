@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace lab2
@@ -7,7 +6,7 @@ namespace lab2
     class Program
     {
         static double[,] a;
-        static int N = 32;
+        static int N = 64;
 
         static void Main(string[] args)
         {
